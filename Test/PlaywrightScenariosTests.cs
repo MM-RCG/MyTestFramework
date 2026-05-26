@@ -1,4 +1,4 @@
-using MyTestFramework.Tests;
+﻿using MyTestFramework.Tests;
 using Xunit;
 
 namespace MyTestFramework.Specs;
@@ -13,7 +13,7 @@ public class PlaywrightScenariosTests
     /// 登录场景测试。
     /// </summary>
     [Fact(Skip = "按需单独运行；常规业务回归可直接跑各模块用例。")]
-    public async Task Login_Test()
+    public async Task TC_Login_Test()
     {
         var test = new LoginTest();
         await test.RunAsync();
@@ -22,8 +22,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// 新增用户场景测试。
     /// </summary>
-    [Fact(Skip = "已并入 All_Modules_Single_Login_Test，避免重复登录。")]
-    public async Task User_Create_Test()
+    [Fact(Skip = "已并入 TC_All_Modules_Single_Login_Test，避免重复登录。")]
+    public async Task TC_User_Create_Test()
     {
         var test = new UserManagementTest();
         await test.RunCreateUserAsync();
@@ -32,8 +32,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// 编辑用户场景测试。
     /// </summary>
-    [Fact(Skip = "已并入 All_Modules_Single_Login_Test，避免重复登录。")]
-    public async Task User_Edit_Test()
+    [Fact(Skip = "已并入 TC_All_Modules_Single_Login_Test，避免重复登录。")]
+    public async Task TC_User_Edit_Test()
     {
         var test = new UserManagementEditTest();
         await test.RunEditUserAsync();
@@ -42,8 +42,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// 工作区管理场景测试。
     /// </summary>
-    [Fact(Skip = "已并入 Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
-    public async Task Workspace_Management_Test()
+    [Fact(Skip = "已并入 TC_Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
+    public async Task TC_Workspace_Management_Test()
     {
         var test = new WorkspaceManagementTest();
         await test.RunWorkspaceCrudAsync();
@@ -52,8 +52,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// 急停区域管理场景测试。
     /// </summary>
-    [Fact(Skip = "已并入 Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
-    public async Task Emergency_Stop_Area_Management_Test()
+    [Fact(Skip = "已并入 TC_Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
+    public async Task TC_Emergency_Stop_Area_Management_Test()
     {
         var test = new EmergencyStopAreaTest();
         await test.RunEmergencyStopAreaCrudAsync();
@@ -62,8 +62,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// MCC设备状态监控场景测试。
     /// </summary>
-    [Fact(Skip = "已并入 Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
-    public async Task Mcc_Device_Status_Monitor_Test()
+    [Fact(Skip = "已并入 TC_Non_User_Modules_Single_Login_Test，避免非用户模块重复登录。")]
+    public async Task TC_Mcc_Device_Status_Monitor_Test()
     {
         var test = new MccDeviceStatusMonitorTest();
         await test.RunMccDeviceCrudAsync();
@@ -72,8 +72,8 @@ public class PlaywrightScenariosTests
     /// <summary>
     /// 非用户模块单次 admin 登录串行执行（工作区、急停区域、MCC）。
     /// </summary>
-    [Fact(Skip = "当前采用 All_Modules_Single_Login_Test：用户管理末次 admin 登录后串行执行后续模块。")]
-    public async Task Non_User_Modules_Single_Login_Test()
+    [Fact(Skip = "当前采用 TC_All_Modules_Single_Login_Test：用户管理末次 admin 登录后串行执行后续模块。")]
+    public async Task TC_Non_User_Modules_Single_Login_Test()
     {
         var test = new AllModulesSingleLoginTest();
         await test.RunNonUserModulesAsync();
@@ -83,7 +83,7 @@ public class PlaywrightScenariosTests
     /// 单次 admin 登录串行执行所有模块场景。
     /// </summary>
     [Fact]
-    public async Task All_Modules_Single_Login_Test()
+    public async Task TC_All_Modules_Single_Login_Test()
     {
         var test = new AllModulesSingleLoginTest();
         await test.RunAsync();

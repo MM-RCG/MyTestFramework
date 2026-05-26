@@ -1,4 +1,4 @@
-using Microsoft.Playwright;
+﻿using Microsoft.Playwright;
 using MyTestFramework.Utils;
 
 namespace MyTestFramework.Pages;
