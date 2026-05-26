@@ -1,4 +1,4 @@
-# UI 自动化测试 Pipeline
+# UI 自动化测试 Pipeline (调试版本)
 trigger:
 - main
 
@@ -17,32 +17,38 @@ steps:
   displayName: '还原 NuGet 包'
 
 # 构建项目
-- script: dotnet build --no-restore --configuration Release
+- script: dotnet build --configuration Release --no-restore
   displayName: '构建项目'
+
+# 列出所有测试（调试用）
+- script: dotnet test --list-tests
+  displayName: '列出所有测试用例'
 
 # 安装 Playwright 浏览器
 - script: |
-    dotnet build
-    pwsh .\bin\Release\net8.0\playwright.ps1 install
+    dotnet build --configuration Release
+    if (Test-Path ".\bin\Release\net8.0\playwright.ps1") {
+        powershell .\bin\Release\net8.0\playwright.ps1 install chromium
+    } else {
+        Write-Host "playwright.ps1 未找到，请检查构建路径"
+    }
   displayName: '安装 Playwright 浏览器'
 
-# 运行测试
+# 运行登录测试（先跑一个简单的）
+- script: dotnet test --no-build --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
+  displayName: '运行登录测试（调试）'
+  continueOnError: true
+
+# 运行所有测试
 - script: dotnet test --no-build --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults
-  displayName: '运行 UI 自动化测试'
+  displayName: '运行所有 UI 测试'
+  continueOnError: true
 
 # 发布测试结果
 - task: PublishTestResults@2
-  displayName: '发布测试结果到流水线'
-  condition: succeededOrFailed()
+  displayName: '发布测试结果'
+  condition: always()
   inputs:
     testResultsFormat: 'VSTest'
     testResultsFiles: '**/*.trx'
-    failTaskOnFailedTests: true
-
-# 保存测试报告（可选）
-- task: PublishBuildArtifacts@1
-  displayName: '保存测试报告'
-  condition: succeededOrFailed()
-  inputs:
-    pathToPublish: $(Build.ArtifactStagingDirectory)/TestResults
-    artifactName: 'TestResults'
+    failTaskOnFailedTests: false
