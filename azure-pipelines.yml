@@ -20,29 +20,68 @@ steps:
 - script: dotnet build --configuration Release --no-restore
   displayName: '构建项目'
 
-# 安装 Playwright 浏览器（推荐方式）
+# 配置 hosts 文件（解决 DNS 解析问题）
 - powershell: |
-    # 安装 Playwright CLI 工具
+    Write-Host "配置 hosts 文件..."
+    $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+    $ipAddress = "10.160.140.102"
+    $domain = "vpc-sz-interroll"
+    
+    # 检查是否已存在
+    $existing = Select-String -Path $hostsPath -Pattern $domain -Quiet
+    if ($existing) {
+      Write-Host "域名映射已存在，跳过添加"
+    } else {
+      Add-Content -Path $hostsPath -Value "`n$ipAddress $domain"
+      Write-Host "已添加: $ipAddress $domain"
+    }
+    
+    # 验证配置
+    Write-Host "`n当前 hosts 中的相关配置："
+    Select-String -Path $hostsPath -Pattern $domain
+  displayName: '配置内网域名解析'
+
+# 验证域名解析是否生效
+- powershell: |
+    Write-Host "验证域名解析..."
+    try {
+      $ips = [System.Net.Dns]::GetHostAddresses("vpc-sz-interroll")
+      Write-Host "解析成功: $($ips -join ', ')"
+    } catch {
+      Write-Host "解析失败: $_"
+      exit 1
+    }
+  displayName: '验证域名解析'
+
+# 安装 Playwright 浏览器
+- powershell: |
+    Write-Host "安装 Playwright 浏览器..."
+    
+    # 方法1：使用 dotnet 工具
     dotnet tool install --global Microsoft.Playwright.CLI
     
-    # 安装浏览器
+    # 方法2：通过项目安装（推荐）
+    cd $(Build.SourcesDirectory)
+    dotnet build ./MyTestFramework.csproj -t:PlaywrightInstall
+    
+    # 安装浏览器到当前用户目录
     playwright install chromium
     
-    # 或者一行命令完成
-    # dotnet msbuild .\YourTestProject.csproj /t:PlaywrightInstall
+    Write-Host "Playwright 安装完成"
   displayName: '安装 Playwright 浏览器'
+  continueOnError: false
 
+# 运行单个测试（调试用）
 - script: |
-    echo 10.160.140.102 vpc-sz-interroll >> %SystemRoot%\System32\drivers\etc\hosts
-  displayName: 'Configure hosts file for internal domain'
-
-# 运行登录测试
-- script: dotnet test --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
+    echo "运行登录测试..."
+    dotnet test --configuration Release --filter "FullyQualifiedName~TC_Login_Test" --logger "console;verbosity=detailed"
   displayName: '运行登录测试（调试）'
   continueOnError: true
 
 # 运行所有测试
-- script: dotnet test --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults
+- script: |
+    echo "运行所有 UI 测试..."
+    dotnet test --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults --verbosity normal
   displayName: '运行所有 UI 测试'
   continueOnError: true
 
@@ -54,3 +93,12 @@ steps:
     testResultsFormat: 'VSTest'
     testResultsFiles: '**/*.trx'
     failTaskOnFailedTests: false
+    testRunTitle: 'UI 测试结果'
+
+# 发布测试产物（用于调试）
+- task: PublishBuildArtifacts@1
+  displayName: '发布测试日志'
+  condition: always()
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/TestResults'
+    ArtifactName: 'TestResults'
