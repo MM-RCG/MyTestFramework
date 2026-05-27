@@ -20,27 +20,25 @@ steps:
 - script: dotnet build --configuration Release --no-restore
   displayName: '构建项目'
 
-# 列出所有测试（调试用）
-- script: dotnet test --list-tests
-  displayName: '列出所有测试用例'
-
-# 安装 Playwright 浏览器
-- script: |
-    dotnet build --configuration Release
-    if (Test-Path ".\bin\Release\net8.0\playwright.ps1") {
-        powershell .\bin\Release\net8.0\playwright.ps1 install chromium
-    } else {
-        Write-Host "playwright.ps1 未找到，请检查构建路径"
-    }
+# 安装 Playwright 浏览器（推荐方式）
+- powershell: |
+    # 安装 Playwright CLI 工具
+    dotnet tool install --global Microsoft.Playwright.CLI
+    
+    # 安装浏览器
+    playwright install chromium
+    
+    # 或者一行命令完成
+    # dotnet msbuild .\YourTestProject.csproj /t:PlaywrightInstall
   displayName: '安装 Playwright 浏览器'
 
-# 运行登录测试（先跑一个简单的）
-- script: dotnet test --no-build --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
+# 运行登录测试
+- script: dotnet test --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
   displayName: '运行登录测试（调试）'
   continueOnError: true
 
 # 运行所有测试
-- script: dotnet test --no-build --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults
+- script: dotnet test --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults
   displayName: '运行所有 UI 测试'
   continueOnError: true
 
