@@ -32,6 +32,10 @@ steps:
     # dotnet msbuild .\YourTestProject.csproj /t:PlaywrightInstall
   displayName: '安装 Playwright 浏览器'
 
+- script: |
+    echo 10.160.140.102 vpc-sz-interroll >> %SystemRoot%\System32\drivers\etc\hosts
+  displayName: 'Configure hosts file for internal domain'
+
 # 运行登录测试
 - script: dotnet test --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
   displayName: '运行登录测试（调试）'
