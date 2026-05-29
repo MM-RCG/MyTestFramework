@@ -3,7 +3,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
+  name: 'CRR' 
 
 steps:
 # 安装 .NET 8.0
