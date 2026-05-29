@@ -20,32 +20,53 @@ steps:
 - script: dotnet build --configuration Release --no-restore
   displayName: '构建项目'
 
-# 安装 Playwright 浏览器（强制安装并设置路径）
+# 智能安装 Playwright（仅在需要时安装）
 - powershell: |
     # 设置 Playwright 浏览器安装路径
     $env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE\ms-playwright"
     
-    # 安装 Playwright CLI 工具
-    dotnet tool update --global Microsoft.Playwright.CLI
-    
-    # 强制安装所有浏览器
-    playwright install chromium
-    
-    # 验证安装
-    if (Test-Path "$env:USERPROFILE\ms-playwright\chromium-*\chrome-win\chrome.exe") {
-        Write-Host "Chromium 安装成功"
-    } else {
-        Write-Host "Chromium 未找到，尝试重新安装"
-        playwright install chromium --force
+    # 检查 Playwright CLI 是否已安装
+    $playwrightInstalled = $false
+    try {
+        $version = playwright --version 2>$null
+        if ($version) {
+            Write-Host "Playwright CLI 已安装，版本: $version" -ForegroundColor Green
+            $playwrightInstalled = $true
+        }
+    } catch {
+        Write-Host "Playwright CLI 未安装" -ForegroundColor Yellow
     }
-  displayName: '安装 Playwright 浏览器'
+    
+    # 如果未安装，则安装 CLI
+    if (-not $playwrightInstalled) {
+        Write-Host "正在安装 Playwright CLI..." -ForegroundColor Cyan
+        dotnet tool update --global Microsoft.Playwright.CLI
+        # 刷新 PATH
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    }
+    
+    # 检查 Chromium 是否已安装
+    $browserInstalled = Test-Path "$env:USERPROFILE\ms-playwright\chromium-*\chrome-win\chrome.exe"
+    
+    if ($browserInstalled) {
+        Write-Host "Chromium 浏览器已安装，跳过下载" -ForegroundColor Green
+    } else {
+        Write-Host "正在安装 Chromium 浏览器..." -ForegroundColor Cyan
+        playwright install chromium
+    }
+    
+    # 最终验证
+    Write-Host "========================================" -ForegroundColor Cyan
+    Write-Host "Playwright 环境就绪" -ForegroundColor Green
+    Write-Host "========================================" -ForegroundColor Cyan
+  displayName: '智能安装 Playwright（跳过已安装组件）'
 
 # 设置环境变量并运行登录测试
 - powershell: |
     $env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE\ms-playwright"
-    $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "0"
+    $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"  # 跳过浏览器下载（因为已安装）
     
-    # 运行测试
+    Write-Host "运行登录测试..." -ForegroundColor Cyan
     dotnet test --configuration Release --filter "LoginTest" --logger "console;verbosity=detailed"
   displayName: '运行登录测试（调试）'
   continueOnError: true
@@ -53,8 +74,9 @@ steps:
 # 设置环境变量并运行所有测试
 - powershell: |
     $env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE\ms-playwright"
-    $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "0"
+    $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"  # 跳过浏览器下载
     
+    Write-Host "运行所有 UI 测试..." -ForegroundColor Cyan
     dotnet test --configuration Release --logger "trx" --results-directory $(Build.ArtifactStagingDirectory)/TestResults
   displayName: '运行所有 UI 测试'
   continueOnError: true
